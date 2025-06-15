@@ -12,7 +12,7 @@ def main():
 
         frame = tracker.process_frame(frame)
         #tracker.draw_trajectory_pseudo3D(frame)
-        tracker.draw_trajectory(frame)
+        tracker.draw_trajectory_smooth(frame)
 
         cv2.imshow("Rehab Tracker", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
