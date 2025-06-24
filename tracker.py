@@ -2,13 +2,24 @@ import mediapipe as mp
 import numpy as np
 import cv2
 from collections import deque
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+
 
 class HandTracker:
     def __init__(self, max_len=512):
         self.hands = mp.solutions.hands.Hands()
         self.trajectory = deque(maxlen=max_len)  # store finger trajectory
         self.mp_draw = mp.solutions.drawing_utils
-
+        base_options = python.BaseOptions(
+            delegate=python.BaseOptions.Delegate.GPU
+        )
+        options = vision.HandLandmarkerOptions(
+            base_options=base_options,
+            num_hands=1,
+            running_mode=vision.RunningMode.IMAGE
+        )
+        
     def process_frame(self, frame):
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = self.hands.process(image_rgb)
