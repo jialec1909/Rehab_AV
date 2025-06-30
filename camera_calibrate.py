@@ -14,17 +14,18 @@ CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
 
 
-def detect():
+def detect(camID):
     # cap = cv2.VideoCapture(1)
-    allCharucoCorners = numpy.array([])
-    allCharucoIds = numpy.array([])
     BOARD.setLegacyPattern(True)
 
+    objPoints = []
+    imgPoints = []
+
     # get count of pictures in /img
-    imgCount = len(os.listdir("img"))
+    imgCount = len(os.listdir(f"./img/{camID}/"))
     for i in range(imgCount):
         # frame = BOARD.generateImage((900,900),10,1)
-        frame = cv2.imread("./img/charuco_capture_" + str(i) + ".png")
+        frame = cv2.imread(f"./img/{camID}/" + str(i) + ".png")
         size = frame.shape
         # ret, frame = cap.read()
         # if not ret:
@@ -37,42 +38,27 @@ def detect():
         charucoDetector = aruco.CharucoDetector(
             BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS)
 
-        charucoCorners, charucoIds, markersCorners, markersIds = (
+        charucoCorners, charucoIds, _, _ = (
             charucoDetector.detectBoard(gray)
         )
 
         if charucoCorners is not None or charucoIds is not None:
-            # aruco.interpolateCornersCharuco(markersCorners, markersIds, gray, BOARD, charucoCorners, charucoIds)
+            temp1, temp2 = BOARD.matchImagePoints(charucoCorners, charucoIds)
+            objPoints.append(temp1)
+            imgPoints.append(temp2)
 
-            newImg = aruco.drawDetectedMarkers(
-                image=frame.copy(), corners=markersCorners, ids=markersIds
-            )
-            newImg = aruco.drawDetectedCornersCharuco(
-                image=newImg, charucoCorners=charucoCorners, charucoIds=charucoIds
-            )
-
-            # Display the image with detected markers
-            cv2.imshow("Charuco Board", newImg)
-
-            key = cv2.waitKey(0) & 0xFF
-            if key == ord("q"):
-                break
-            
-            try:
-                calibrate(charucoCorners, charucoIds, size, i)
-            except Exception as e:
-                print(f"Error during calibration: {e}")
         else:
             print("No charuco corners found")
 
     # cap.release()
     cv2.destroyAllWindows()
+    return objPoints, imgPoints, size[:2]
 
 
-def takePicture():
+def takePicture(camID):
     i = 0
-    cap = cv2.VideoCapture(1)
-    while i < 10:
+    cap = cv2.VideoCapture(camID)
+    while i < 25:
         ret, frame = cap.read()
         cv2.imshow("Camera Feed", frame)
         if not ret:
@@ -82,7 +68,7 @@ def takePicture():
         if key == ord("q"):
             break
         elif key == ord("s"):
-            filename = f"./img/charuco_capture_{i}.png"
+            filename = f"./img/{camID}/{i}.png"
             cv2.imwrite(filename, frame)
             print(f"Saved {filename}")
             i += 1
@@ -90,30 +76,42 @@ def takePicture():
     cv2.destroyAllWindows()
 
 
-def calibrate(charucoCorners, charucoIds, size, i):
-            objPoints, imgPoints = BOARD.matchImagePoints(
-                charucoCorners, charucoIds
-            )
+def calibrate(objPoints, imgPoints, size):
 
-            if objPoints is None and imgPoints is None:
-                return
+    cameraMatrix = numpy.zeros((3, 3), dtype=numpy.float64)
+    distCoeffs = numpy.zeros((5, 1), dtype=numpy.float64)
+    rvecs = []
+    tvecs = []
+    error = 0.0
+    cv2.calibrateCameraExtended(
+        objPoints, imgPoints, (size[0], size[1]
+                               ), cameraMatrix, distCoeffs, rvecs, tvecs, perViewErrors=error
+    )
 
-            cameraMatrix = numpy.zeros((3, 3), dtype=numpy.float64)
-            distCoeffs = numpy.zeros((5, 1), dtype=numpy.float64)
-            rvecs = []
-            tvecs = []
-            error = 0.0
-            cv2.calibrateCameraExtended(
-                objPoints, imgPoints, (size[0], size[1]), cameraMatrix, distCoeffs, rvecs, tvecs, perViewErrors=error
-            )
+    print(f"Calibration error for images: {error}")
+    print("Camera Matrix:")
+    print(cameraMatrix)
+    print("Distortion Coefficients:")
+    print(distCoeffs)
+    # write to txt file
+    with open("camera_calibration.txt", "w") as f:
+        f.write("Camera Matrix:\n")
+        f.write(str(cameraMatrix) + "\n")
+        f.write("Distortion Coefficients:\n")
+        f.write(str(distCoeffs) + "\n")
 
-            print(f"Calibration error for image {i}: {error}")
+
+def singleCameraCalibration(camID):
+    if not os.path.exists("./img/1/1.png"):
+        takePicture(camID)
+
+    allCharucoCorners, allCharucoIds, size = detect(camID)
+    print("testing calibration")
+    calibrate(allCharucoCorners, allCharucoIds, size)
+
 
 def main():
-    #takePicture()
-
-    detect()
-    print("testing calibration")
+    singleCameraCalibration(1)
 
 
 if __name__ == "__main__":
