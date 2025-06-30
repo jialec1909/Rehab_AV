@@ -1,73 +1,119 @@
 import cv2
 import numpy
 from cv2 import aruco
+import os
+from time import sleep
 
 # BOARD = aruco.CharucoBoard((5, 5), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
+# BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
+BOARD = aruco.CharucoBoard(
+    (11, 8), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+)
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
 
 
-def calibrate():
+def detect():
+    # cap = cv2.VideoCapture(1)
     allCharucoCorners = numpy.array([])
     allCharucoIds = numpy.array([])
     BOARD.setLegacyPattern(True)
-    
 
-    # Create a CharucoDetector object
-    i = 0
-    while i < 20:
+    # get count of pictures in /img
+    imgCount = len(os.listdir("img"))
+    for i in range(imgCount):
+        # frame = BOARD.generateImage((900,900),10,1)
+        frame = cv2.imread("./img/charuco_capture_" + str(i) + ".png")
+        size = frame.shape
+        # ret, frame = cap.read()
+        # if not ret:
+        #    print("Failed to grab frame")
+        #    break
+
         # Grayscale the image
-        #frame = cv2.imread(f"img/{i}.png")
-        #frame = cv2.imread("1.jpg")
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        charucoDetector = aruco.CharucoDetector(BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS)
+        charucoDetector = aruco.CharucoDetector(
+            BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS)
 
-        charucoCorners, charucoIds, markersCorners, markersIds = charucoDetector.detectBoard(gray)
+        charucoCorners, charucoIds, markersCorners, markersIds = (
+            charucoDetector.detectBoard(gray)
+        )
 
-        if (charucoCorners is not None or charucoIds is not None):
-            #aruco.interpolateCornersCharuco(markersCorners, markersIds, gray, BOARD, charucoCorners, charucoIds)
-            
-            frame = aruco.drawDetectedMarkers(frame, corners=markersCorners, ids=markersIds)
-            frame = aruco.drawDetectedCornersCharuco(frame, charucoCorners=charucoCorners, charucoIds=charucoIds)
+        if charucoCorners is not None or charucoIds is not None:
+            # aruco.interpolateCornersCharuco(markersCorners, markersIds, gray, BOARD, charucoCorners, charucoIds)
+
+            newImg = aruco.drawDetectedMarkers(
+                image=frame.copy(), corners=markersCorners, ids=markersIds
+            )
+            newImg = aruco.drawDetectedCornersCharuco(
+                image=newImg, charucoCorners=charucoCorners, charucoIds=charucoIds
+            )
+
             # Display the image with detected markers
+            cv2.imshow("Charuco Board", newImg)
+
+            key = cv2.waitKey(0) & 0xFF
+            if key == ord("q"):
+                break
             
+            try:
+                calibrate(charucoCorners, charucoIds, size, i)
+            except Exception as e:
+                print(f"Error during calibration: {e}")
         else:
             print("No charuco corners found")
-        # Resize the frame to 1/5th of its original size
-        newFrame = cv2.resize(frame, (frame.shape[1] // 5, frame.shape[0] // 5))
-        cv2.imshow("Charuco Board", newFrame)
-        # Wait for the space bar to proceed to the next image
-        while True:
-            key = cv2.waitKey(0)
-            if key == 32:  # Space bar ASCII code
-                break
-        cv2.destroyAllWindows()
 
-def capture_frame():
-    i, j = 0, 0
-    # Capture a frame from the camera, 1 frame every 30 frames
+    # cap.release()
+    cv2.destroyAllWindows()
+
+
+def takePicture():
+    i = 0
     cap = cv2.VideoCapture(1)
-    while i < 20:
+    while i < 10:
         ret, frame = cap.read()
-        if ret is None:
-            print("Failed to capture frame")
-            continue
-        if j % 30 == 0:
-            # save image to img/i.png
-            cv2.imwrite(f"img/{i}.png", frame)
+        cv2.imshow("Camera Feed", frame)
+        if not ret:
+            print("Failed to grab frame")
+            break
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
+            break
+        elif key == ord("s"):
+            filename = f"./img/charuco_capture_{i}.png"
+            cv2.imwrite(filename, frame)
+            print(f"Saved {filename}")
             i += 1
-        j += 1
-
     cap.release()
+    cv2.destroyAllWindows()
 
 
+def calibrate(charucoCorners, charucoIds, size, i):
+            objPoints, imgPoints = BOARD.matchImagePoints(
+                charucoCorners, charucoIds
+            )
+
+            if objPoints is None and imgPoints is None:
+                return
+
+            cameraMatrix = numpy.zeros((3, 3), dtype=numpy.float64)
+            distCoeffs = numpy.zeros((5, 1), dtype=numpy.float64)
+            rvecs = []
+            tvecs = []
+            error = 0.0
+            cv2.calibrateCameraExtended(
+                objPoints, imgPoints, (size[0], size[1]), cameraMatrix, distCoeffs, rvecs, tvecs, perViewErrors=error
+            )
+
+            print(f"Calibration error for image {i}: {error}")
 
 def main():
-    #capture_frame()
-    calibrate()
+    #takePicture()
+
+    detect()
+    print("testing calibration")
 
 
 if __name__ == "__main__":
