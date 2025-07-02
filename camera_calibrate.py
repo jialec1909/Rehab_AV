@@ -56,11 +56,16 @@ def detect(camID):
     return objPoints, imgPoints, size[:2]
 
 
+def createCamera(camID):
+    cap = cv2.VideoCapture(camID)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    return cap
+
+
 def takePicture(camID):
     i = 0
-    cap = cv2.VideoCapture(camID)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap = createCamera(camID)
     while i < 25:
         ret, frame = cap.read()
         cv2.imshow("Camera Feed", frame)
@@ -79,47 +84,40 @@ def takePicture(camID):
     cv2.destroyAllWindows()
 
 
-def calibrate(objPoints, imgPoints, size,camID):
+def calibrate(objPoints, imgPoints, size, camID):
 
     cameraMatrix = numpy.zeros((3, 3), dtype=numpy.float64)
     distCoeffs = numpy.zeros((5, 1), dtype=numpy.float64)
     rvecs = []
     tvecs = []
     error = 0.0
-    cv2.calibrateCameraExtended(
+    ret = cv2.calibrateCameraExtended(
         objPoints, imgPoints, (size[0], size[1]
                                ), cameraMatrix, distCoeffs, rvecs, tvecs, perViewErrors=error
     )
+    print(f"cam {camID}: " + str(ret[0]))
 
-    print(f"Calibration error for images: {error}")
-    print("Camera Matrix:")
-    print(cameraMatrix)
-    print("Distortion Coefficients:")
-    print(distCoeffs)
     # write to txt file
     calibration_data = {
         "camera_matrix": cameraMatrix.tolist(),
         "distortion_coefficients": distCoeffs.tolist()
     }
-    with open(f"camera_calibration_{camID}.json", "w") as f:
+    with open(f"./img/camera_calibration_{camID}.json", "w") as f:
         json.dump(calibration_data, f, indent=4)
-        
-    return cameraMatrix, distCoeffs, rvecs, tvecs
+    return cameraMatrix, distCoeffs
 
 
 def singleCameraCalibration(camID):
     if not os.path.exists(f"./img/{camID}/1.png"):
         takePicture(camID)
     allCharucoCorners, allCharucoIds, size = detect(camID)
-    print("testing calibration")
-    return calibrate(allCharucoCorners, allCharucoIds, size,camID)
-
+    return calibrate(allCharucoCorners, allCharucoIds, size, camID)
 
 
 def main():
-    singleCameraCalibration(0)
-    singleCameraCalibration(1)
 
+    cam1, dist1 = singleCameraCalibration(0)
+    cam2, dist2 = singleCameraCalibration(1)
 
 if __name__ == "__main__":
     main()
