@@ -3,6 +3,7 @@ import numpy
 from cv2 import aruco
 import os
 from time import sleep
+import json
 
 # BOARD = aruco.CharucoBoard((5, 5), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
@@ -58,6 +59,8 @@ def detect(camID):
 def takePicture(camID):
     i = 0
     cap = cv2.VideoCapture(camID)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     while i < 25:
         ret, frame = cap.read()
         cv2.imshow("Camera Feed", frame)
@@ -76,7 +79,7 @@ def takePicture(camID):
     cv2.destroyAllWindows()
 
 
-def calibrate(objPoints, imgPoints, size):
+def calibrate(objPoints, imgPoints, size,camID):
 
     cameraMatrix = numpy.zeros((3, 3), dtype=numpy.float64)
     distCoeffs = numpy.zeros((5, 1), dtype=numpy.float64)
@@ -94,23 +97,27 @@ def calibrate(objPoints, imgPoints, size):
     print("Distortion Coefficients:")
     print(distCoeffs)
     # write to txt file
-    with open("camera_calibration.txt", "w") as f:
-        f.write("Camera Matrix:\n")
-        f.write(str(cameraMatrix) + "\n")
-        f.write("Distortion Coefficients:\n")
-        f.write(str(distCoeffs) + "\n")
+    calibration_data = {
+        "camera_matrix": cameraMatrix.tolist(),
+        "distortion_coefficients": distCoeffs.tolist()
+    }
+    with open(f"camera_calibration_{camID}.json", "w") as f:
+        json.dump(calibration_data, f, indent=4)
+        
+    return cameraMatrix, distCoeffs, rvecs, tvecs
 
 
 def singleCameraCalibration(camID):
-    if not os.path.exists("./img/1/1.png"):
+    if not os.path.exists(f"./img/{camID}/1.png"):
         takePicture(camID)
-
     allCharucoCorners, allCharucoIds, size = detect(camID)
     print("testing calibration")
-    calibrate(allCharucoCorners, allCharucoIds, size)
+    return calibrate(allCharucoCorners, allCharucoIds, size,camID)
+
 
 
 def main():
+    singleCameraCalibration(0)
     singleCameraCalibration(1)
 
 
