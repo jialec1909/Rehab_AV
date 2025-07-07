@@ -23,12 +23,24 @@ def detect():
     imgPoints0 = []
     imgPoints1 = []
 
-    # get count of pictures in /img
-    imgCount = len(os.listdir(f"./img/stereo/"))/2  # halves
-    for i in range(int(imgCount)):
-        # frame = BOARD.generateImage((900,900),10,1)
-        frame0 = cv2.imread(f"./img/stereo/{i}_0.png")
-        frame1 = cv2.imread(f"./img/stereo/{i}_1.png")
+    cap0 = createCamera(0)
+    cap1 = createCamera(1)
+    i = 0
+    while i < 20:
+        cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Camera Feed", 800, 900)
+        path0 = f"./img/stereo/{i}_0.png"
+        path1 = f"./img/stereo/{i}_1.png"
+        if not os.path.exists(path0) or not os.path.exists(path1):
+            ret0, frame0 = cap0.read()
+            ret1, frame1 = cap1.read()
+            if not ret0 or not ret1:
+                print("Failed to grab frame")
+                break
+        else:
+            frame0 = cv2.imread(path0)
+            frame1 = cv2.imread(path1)
+
         size = frame0.shape
         # Grayscale the image
         gray0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
@@ -43,15 +55,29 @@ def detect():
         charucoCorners1, charucoIds1, _, _ = (
             charucoDetector.detectBoard(gray1)
         )
-
+        if charucoIds0 is not None and charucoIds1 is not None and charucoIds0.size > 4 and charucoIds1.size > 4:
+            tempFrame0 = aruco.drawDetectedCornersCharuco(
+                frame0.copy(), charucoCorners0, charucoIds0)
+            tempFrame1 = aruco.drawDetectedCornersCharuco(
+                frame1.copy(), charucoCorners1, charucoIds1)
+        else:
+            tempFrame0 = frame0.copy()
+            tempFrame1 = frame1.copy()
+        combined = numpy.vstack((tempFrame0, tempFrame1))
+        cv2.imshow("Camera Feed", combined)
+        cv2.waitKey(1)
         if charucoIds0 is not None and charucoIds1 is not None and charucoIds0.size > 4 and charucoIds1.size > 4 and charucoIds0.size == charucoIds1.size:
-            temp1, temp2 = BOARD.matchImagePoints(charucoCorners0, charucoIds0)
+            temp1, temp2 = BOARD.matchImagePoints(
+                charucoCorners0, charucoIds0)
             _, temp3 = BOARD.matchImagePoints(charucoCorners1, charucoIds1)
             print(f"Found {len(temp1)} charuco corners on image  {i}_0")
             print(f"Found {len(temp3)} charuco corners on image  {i}_1")
             objPoints.append(temp1)
             imgPoints0.append(temp2)
             imgPoints1.append(temp3)
+            savePicture(frame0, frame1, i)
+            sleep(1)  # Wait for half a second before capturing the next frame
+            i += 1
         else:
             print("No charuco corners found on image pair " + str(i))
 
@@ -67,35 +93,12 @@ def createCamera(camID):
     return cap
 
 
-def takePicture():
+def savePicture(frame0, frame1, i):
     if not os.path.exists(f"./img/stereo"):
         os.makedirs(f"./img/stereo")
-    else:
-        print(f"Directory ./img/stereo already exists. Pictures will be overwritten.")
-    i = 0
-    cap0 = createCamera(0)
-    cap1 = createCamera(1)
-    while True:
-        ret0, frame0 = cap0.read()
-        ret1, frame1 = cap1.read()
-        combined = numpy.vstack((frame0, frame1))
-        cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Camera Feed", 960, 1080)
-        cv2.imshow("Camera Feed", combined)
-        if not ret0 or not ret1:
-            print("Failed to grab frame")
-            break
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):
-            break
-        elif key == ord("s"):
-            cv2.imwrite(f"./img/stereo/{i}_0.png", frame0)
-            cv2.imwrite(f"./img/stereo/{i}_1.png", frame1)
-            print(f"Saved {i}")
-            i += 1
-    cap0.release()
-    cap1.release()
-    cv2.destroyAllWindows()
+    cv2.imwrite(f"./img/stereo/{i}_0.png", frame0)
+    cv2.imwrite(f"./img/stereo/{i}_1.png", frame1)
+    print(f"Saved {i}")
 
 
 def loadCameraParams(camID):
@@ -121,20 +124,20 @@ def calibrate(objPoints, imgPoints0, imgPoint1, size):
     E = numpy.zeros((3, 3), dtype=numpy.float64)
     F = numpy.zeros((3, 3), dtype=numpy.float64)
     ret = cv2.stereoCalibrate(objPoints, imgPoints0, imgPoint1, cameraMatrix0, distCoeffs0,
-                                                      cameraMatrix1, distCoeffs1, size,  R, T, E, F, flags=flags)
+                              cameraMatrix1, distCoeffs1, size,  R, T, E, F, flags=flags)
     print("Stereo Calibration Result:")
     print("error:",   str(ret[0]))
     print("Rotation Matrix:\n", R)
     print("Translation Vector:\n", T)
     print("Essential Matrix:\n", E)
     print("Fundamental Matrix:\n", F)
-    #print("Rvec:\n", rvec)
-    #print("Tvec:\n", tvec)
+    # print("Rvec:\n", rvec)
+    # print("Tvec:\n", tvec)
 
 
 def StereoCameraCalibration():
-    if not os.path.exists(f"./img/stereo/0_1.png"):
-        takePicture()
+    # if not os.path.exists(f"./img/stereo/0_1.png"):
+    # takePicture()
     objPoints, imgPoints0, imgPoints1, size = detect()
     return calibrate(objPoints, imgPoints0, imgPoints1, size)
 
