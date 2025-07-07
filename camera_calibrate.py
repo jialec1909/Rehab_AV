@@ -9,7 +9,7 @@ import json
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 BOARD = aruco.CharucoBoard(
-    (11, 8), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+    (11, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
 )
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
@@ -43,13 +43,13 @@ def detect(camID):
             charucoDetector.detectBoard(gray)
         )
 
-        if charucoCorners is not None or charucoIds is not None:
+        if charucoCorners is not None and charucoIds is not None and charucoIds.size > 4:
             temp1, temp2 = BOARD.matchImagePoints(charucoCorners, charucoIds)
             objPoints.append(temp1)
             imgPoints.append(temp2)
 
         else:
-            print("No charuco corners found")
+            print("No charuco corners found on image " + str(i))
 
     # cap.release()
     cv2.destroyAllWindows()
@@ -64,6 +64,10 @@ def createCamera(camID):
 
 
 def takePicture(camID):
+    if not os.path.exists(f"./img/{camID}"):
+        os.makedirs(f"./img/{camID}")
+    else:
+        print(f"Directory ./img/{camID} already exists. Pictures will be overwritten.")
     i = 0
     cap = createCamera(camID)
     while i < 25:
