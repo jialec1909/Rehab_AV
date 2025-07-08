@@ -9,7 +9,7 @@ import json
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 BOARD = aruco.CharucoBoard(
-    (11, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+    (11, 8), 0.3, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
 )
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
@@ -23,8 +23,10 @@ def detect():
     imgPoints0 = []
     imgPoints1 = []
 
-    cap0 = createCamera(0)
-    cap1 = createCamera(1)
+    cap0 = cv2.VideoCapture(0)
+    cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap1 = cv2.VideoCapture(1)
     i = 0
     while i < 20:
         cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
@@ -37,6 +39,7 @@ def detect():
             if not ret0 or not ret1:
                 print("Failed to grab frame")
                 break
+            cv2.resize(frame1, (1920, 1080), frame1)
         else:
             frame0 = cv2.imread(path0)
             frame1 = cv2.imread(path1)
@@ -84,14 +87,6 @@ def detect():
     # cap.release()
     cv2.destroyAllWindows()
     return objPoints, imgPoints0, imgPoints1, size[:2]
-
-
-def createCamera(camID):
-    cap = cv2.VideoCapture(camID)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    return cap
-
 
 def savePicture(frame0, frame1, i):
     if not os.path.exists(f"./img/stereo"):
