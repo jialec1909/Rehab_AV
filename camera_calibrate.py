@@ -9,7 +9,7 @@ import json
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 BOARD = aruco.CharucoBoard(
-    (11, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+    (8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
 )
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()

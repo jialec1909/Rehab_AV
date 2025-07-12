@@ -9,7 +9,7 @@ import json
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 BOARD = aruco.CharucoBoard(
-    (11, 8), 0.3, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+    (8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
 )
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
@@ -122,13 +122,14 @@ def calibrate(objPoints, imgPoints0, imgPoint1, size):
                               cameraMatrix1, distCoeffs1, size,  R, T, E, F, flags=flags)
     print("Stereo Calibration Result:")
     print("error:",   str(ret[0]))
-    print("Rotation Matrix:\n", R)
-    print("Translation Vector:\n", T)
-    print("Essential Matrix:\n", E)
-    print("Fundamental Matrix:\n", F)
-    # print("Rvec:\n", rvec)
-    # print("Tvec:\n", tvec)
-
+    calibration_data = {
+        "rotation_matrix": R.tolist(),
+        "translation_vector": T.tolist(),
+        "essential_matrix": E.tolist(),
+        "fundamental_matrix": F.tolist()
+    }
+    with open(f"./img/stereo_calibration.json", "w") as f:
+        json.dump(calibration_data, f, indent=4)
 
 def StereoCameraCalibration():
     # if not os.path.exists(f"./img/stereo/0_1.png"):
