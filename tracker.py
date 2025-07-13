@@ -23,8 +23,10 @@ class HandTracker:
                 #self.trajectory.append((x, y, tip.z))
 
                 self.mp_draw.draw_landmarks(frame, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS)
-
-        return frame
+            return frame, hand_landmarks
+        else:
+            # If no hands detected, return the original frame
+            return frame, None
 
     def draw_trajectory(self, frame):
         for i in range(1, len(self.trajectory)):

@@ -126,7 +126,11 @@ def calibrate(objPoints, imgPoints0, imgPoint1, size):
         "rotation_matrix": R.tolist(),
         "translation_vector": T.tolist(),
         "essential_matrix": E.tolist(),
-        "fundamental_matrix": F.tolist()
+        "fundamental_matrix": F.tolist(),
+        "camera_intrinsics_0": cameraMatrix0.tolist(),
+        "camera_intrinsics_1": cameraMatrix1.tolist(),
+        "distortion_coefficients_0": distCoeffs0.tolist(),
+        "distortion_coefficients_1": distCoeffs1.tolist()
     }
     with open(f"./img/stereo_calibration.json", "w") as f:
         json.dump(calibration_data, f, indent=4)
