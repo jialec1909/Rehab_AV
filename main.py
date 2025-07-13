@@ -24,6 +24,9 @@ def loadCameraParams():
     DISTORTION_COEFFICIENTS_0 = numpy.array(data["distortion_coefficients_0"])
     DISTORTION_COEFFICIENTS_1 = numpy.array(data["distortion_coefficients_1"])
 
+def generate_elliptical_preset(center_x=640, center_y=360, a=400, b=250, steps=400, freq=0.05):
+    return [(center_x + a * numpy.sin(i * freq), center_y + b * numpy.cos(i * freq)) for i in range(steps)]
+
 
 def main():
     cap0 = cv2.VideoCapture(0)
@@ -32,8 +35,14 @@ def main():
     cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 
     # 2 trackers, if there is one then it will be used for both cameras, which then gave camera 1 bogus data
-    tracker0 = HandTracker()
-    tracker1 = HandTracker()
+    # predefine the trajectory as guidance
+    #preset = [(200 + 50 * numpy.sin(i * 0.1), 300 + 30 * numpy.cos(i * 0.1)) for i in range(512)]
+    preset = generate_elliptical_preset()
+
+
+    # create 2 trackers, one for each camera
+    tracker0 = HandTracker(preset_trajectory=preset, tolerance=40)
+    tracker1 = HandTracker(preset_trajectory=preset, tolerance=40)
 
     while True:
         ret0, frame0 = cap0.read()
@@ -43,8 +52,11 @@ def main():
 
         frame0, landmark0 = tracker0.process_frame(frame0)
         tracker0.draw_trajectory_smooth(frame0)
+        tracker0.draw_preset_trajectory_with_tolerance(frame0)
+
         frame1, landmark1 = tracker1.process_frame(frame1)
         tracker1.draw_trajectory_smooth(frame1)
+        tracker1.draw_preset_trajectory_with_tolerance(frame1)
 
         if landmark0 and landmark1:
             for i in range(21):

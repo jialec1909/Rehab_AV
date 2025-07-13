@@ -4,6 +4,7 @@ from cv2 import aruco
 import os
 from time import sleep
 import json
+from camera_selector import find_camera_indices
 
 # BOARD = aruco.CharucoBoard((5, 5), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 # BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
@@ -14,6 +15,12 @@ BOARD = aruco.CharucoBoard(
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
 
+def list_available_cameras(max_cams=5):
+    for i in range(max_cams):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            print(f"Camera {i} is available")
+        cap.release()
 
 def detect(camID):
     # cap = cv2.VideoCapture(1)
@@ -119,7 +126,9 @@ def singleCameraCalibration(camID):
 
 
 def main():
-
+    list_available_cameras()
+    cam_indices = find_camera_indices()
+    print(cam_indices)
     cam1, dist1 = singleCameraCalibration(0)
     cam2, dist2 = singleCameraCalibration(1)
 
