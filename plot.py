@@ -28,8 +28,8 @@ class HandLandmark(enum.Enum):
     PINKY_DIP = 19
     PINKY_TIP = 20
     
-def plot_points(points):
-    fig = plt.figure()
+def plot_points(fig,points):
+    
     ax = fig.add_subplot(111, projection='3d')
     x, y, z = np.array(points)[:,1], np.array(points)[:,2], np.array(points)[:,3]
     ax.scatter(x, y, z, c='r', marker='o')
