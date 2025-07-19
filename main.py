@@ -64,12 +64,22 @@ def main():
     tracker0 = HandTracker(preset_trajectory=None, tolerance=40)
     tracker1 = HandTracker(preset_trajectory=None, tolerance=40)
 
-    demo_preset = load_demo_preset("./demo/demo_preset.json")
-    if demo_preset is None:
-        demo_preset = record_demo_preset(cap0, tracker0, demo_path="./demo/demo_preset.json")
+    record_demo = True
+    demo_name = "demo_preset.json"
+    if not os.path.exists("./demo"):
+        os.makedirs("./demo")
+    demo_path = f"./demo/{demo_name}"
+    # if demo preset exists, load it, otherwise record a new one
+    if record_demo:
+        print("Recording demo preset...")
+        preset_0, preset_1 = record_demo_preset(cap0, tracker0, cap1, tracker1, demo_path=demo_path)
+
+    preset_0, preset_1 = load_demo_preset(demo_path)
+    # if demo_preset is None:
+    #     demo_preset = record_demo_preset(cap0, tracker0, demo_path="./demo/demo_preset.json")
     # predefine the trajectory as guidance
-    tracker0.preset_trajectory = demo_preset
-    tracker1.preset_trajectory = demo_preset
+    tracker0.preset_trajectory = preset_0
+    tracker1.preset_trajectory = preset_1
 
     
     fig = plt.figure()
