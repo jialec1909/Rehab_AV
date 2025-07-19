@@ -28,42 +28,28 @@ def loadCameraParams():
 def generate_elliptical_preset(center_x=640, center_y=360, a=400, b=250, steps=400, freq=0.05):
     return [(center_x + a * numpy.sin(i * freq), center_y + b * numpy.cos(i * freq)) for i in range(steps)]
 
-def DLT(P1, P2, point1, point2):
- 
-    A = [point1[1]*P1[2,:] - P1[1,:],
-         P1[0,:] - point1[0]*P1[2,:],
-         point2[1]*P2[2,:] - P2[1,:],
-         P2[0,:] - point2[0]*P2[2,:]
-        ]
-    A = numpy.array(A).reshape((4,4))
-    #print('A: ')
-    #print(A)
- 
-    B = A.transpose() @ A
-    from scipy import linalg
-    U, s, Vh = linalg.svd(B, full_matrices = False)
- 
-    #print('Triangulated point: ')
-    #print(Vh[3,0:3]/Vh[3,3])
-    return Vh[3,0:3]/Vh[3,3]
-
 def main():
-    cap0 = cv2.VideoCapture(0)
-    cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap1 = cv2.VideoCapture(1)
-    cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap0 = cv2.VideoCapture(0, cv2.CAP_DSHOW)   
+    cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+    cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+    cap1 = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+    cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+    cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
 
     # 2 trackers, if there is one then it will be used for both cameras, which then gave camera 1 bogus data
     # predefine the trajectory as guidance
     #preset = [(200 + 50 * numpy.sin(i * 0.1), 300 + 30 * numpy.cos(i * 0.1)) for i in range(512)]
     preset = generate_elliptical_preset()
 
-
+    cv2.namedWindow("Rehab Tracker 0", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("Rehab Tracker 1", cv2.WINDOW_NORMAL)
     # create 2 trackers, one for each camera
     tracker0 = HandTracker(preset_trajectory=preset, tolerance=40)
     tracker1 = HandTracker(preset_trajectory=preset, tolerance=40)
     
     fig = plt.figure()
+    j = 0
+    ax = fig.add_subplot(111, projection='3d')
     while True:
         ret0, frame0 = cap0.read()
         ret1, frame1 = cap1.read()
@@ -72,28 +58,34 @@ def main():
 
         frame0, landmark0 = tracker0.process_frame(frame0)
         tracker0.draw_trajectory_smooth(frame0)
-        tracker0.draw_preset_trajectory_with_tolerance(frame0)
+        #tracker0.draw_preset_trajectory_with_tolerance(frame0)
 
         frame1, landmark1 = tracker1.process_frame(frame1)
         tracker1.draw_trajectory_smooth(frame1)
-        tracker1.draw_preset_trajectory_with_tolerance(frame1)
+        #tracker1.draw_preset_trajectory_with_tolerance(frame1)
 
+        
         points = []
+        
         if landmark0 and landmark1:
             for i in range(21):
                 point0 = numpy.array([landmark0.landmark[i].x, landmark0.landmark[i].y])
                 point1 = numpy.array([landmark1.landmark[i].x, landmark1.landmark[i].y])
                 # triangulate points
                 points_3d = triangulates(point0, point1)
-                points.append([i, points_3d[0], points_3d[1], points_3d[2]])
+                points.append([i, points_3d[0][0], points_3d[1][0], points_3d[2][0]])
                 
+            #if  & 0xFF == ord('p'):
+            j += 1
+            if j == 10:
+                plot_points(ax, points)
+                j = 0
+        cv2.resizeWindow("Rehab Tracker 0", int(frame0.shape[1]*0.5), int(frame0.shape[0]*0.5))
         cv2.imshow("Rehab Tracker 0", frame0)
-        cv2.imshow("Rehab Tracker 1", frame1)
-        if cv2.waitKey(1) & 0xFF == ord('p'):
-            plot_points(fig, points)
+        cv2.imshow("Rehab Tracker 1", frame1)        
+        cv2.waitKey(1)    
+         
  
-        
-
     cap0.release()
     cap1.release()
     cv2.destroyAllWindows()
@@ -103,10 +95,9 @@ def triangulates(point0, point1):
     projectionMatrix0 = numpy.concatenate([numpy.eye(3), [[0],[0],[0]]], axis = -1)
     projectionMatrix1 = numpy.concatenate([ROTATION_MATRIX, TRANSLATION_VECTOR], axis = -1)
     
-    #points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
-    # Convert from homogeneous coordinates to 3D
-    #points_3d = points_4d[:3] / points_4d[3]
-    points_3d = DLT(projectionMatrix0, projectionMatrix1, point0, point1)
+    points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
+    points_3d = points_4d[:3] / points_4d[3]
+    #points_3d = DLT(projectionMatrix0, projectionMatrix1, point0, point1)
     return points_3d
 
 if __name__ == "__main__":

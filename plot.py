@@ -28,9 +28,8 @@ class HandLandmark(enum.Enum):
     PINKY_DIP = 19
     PINKY_TIP = 20
     
-def plot_points(fig,points):
+def plot_points(ax,points):
     
-    ax = fig.add_subplot(111, projection='3d')
     x, y, z = np.array(points)[:,1], np.array(points)[:,2], np.array(points)[:,3]
     ax.scatter(x, y, z, c='r', marker='o')
 
@@ -53,9 +52,13 @@ def plot_points(fig,points):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+    #ax.set_xlim([0, 0.5])
+    #ax.set_ylim([0, 0.5])
+    #ax.set_zlim([0, 0.5])
     ax.set_title('3D Hand Skeleton')
-    plt.draw()
-    plt.pause(0.1)  # Pause to allow the plot to update
+    plt.pause(0.01)
+    ax.cla()
+ # Pause to allow the plot to update
     
 #
 #with open("point.txt", "r") as f:

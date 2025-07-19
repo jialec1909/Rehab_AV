@@ -60,6 +60,9 @@ def detect():
         else:
             frame0 = cv2.imread(path0)
             frame1 = cv2.imread(path1)
+            print(f"Loaded images {i}_0 and {i}_1 from disk")
+            i += 1
+            continue
 
         size = frame1.shape
         # Grayscale the image
@@ -84,21 +87,23 @@ def detect():
             tempFrame0 = frame0.copy()
             tempFrame1 = frame1.copy()
         finalFrame = combineFrame(tempFrame0, tempFrame1)
-        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]/2), int(finalFrame.shape[0]/2))
+        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]*0.75), int(finalFrame.shape[0]*0.75))
         cv2.imshow("Camera Feed", finalFrame)
-        cv2.waitKey(1)
+
         if charucoIds0 is not None and charucoIds1 is not None and charucoIds0.size > 4 and charucoIds1.size > 4 and charucoIds0.size == charucoIds1.size:
             temp1, temp2 = BOARD.matchImagePoints(
                 charucoCorners0, charucoIds0)
             _, temp3 = BOARD.matchImagePoints(charucoCorners1, charucoIds1)
             print(f"Found {len(temp1)} charuco corners on image  {i}_0")
             print(f"Found {len(temp3)} charuco corners on image  {i}_1")
-            objPoints.append(temp1)
-            imgPoints0.append(temp2)
-            imgPoints1.append(temp3)
-            savePicture(frame0, frame1, i)
             sleep(1)  # Wait for half a second before capturing the next frame
-            i += 1
+            if cv2.waitKey(1) & 0xFF == ord('s'):
+                objPoints.append(temp1)
+                imgPoints0.append(temp2)
+                imgPoints1.append(temp3)
+                print("Captured image pair " + str(i))
+                savePicture(frame0, frame1, i)
+                i += 1
         else:
             print("No charuco corners found on image pair " + str(i))
 
