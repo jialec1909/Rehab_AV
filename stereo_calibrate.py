@@ -15,6 +15,24 @@ CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
 
 
+def createCamera(camID):
+    cap = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    return cap
+
+def combineFrame(frame0, frame1):
+    if frame0.shape[0] >= frame1.shape[0]:
+        newHeight = int(frame0.shape[0] / frame0.shape[1] * frame1.shape[1])
+        frame0 = cv2.resize(frame0, (frame1.shape[1], newHeight))
+    else:
+        newHeight = int(frame1.shape[0] / frame1.shape[1] * frame0.shape[1])
+        frame1 = cv2.resize(frame1, (frame0.shape[1], newHeight))
+    cv2.waitKey(1)
+    return numpy.vstack((frame0, frame1))   
+
+
 def detect():
     # cap = cv2.VideoCapture(1)
     BOARD.setLegacyPattern(True)
@@ -23,14 +41,13 @@ def detect():
     imgPoints0 = []
     imgPoints1 = []
 
-    cap0 = cv2.VideoCapture(0)
-    cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap1 = cv2.VideoCapture(1)
+    cap0 = createCamera(0)
+    cap1 = createCamera(1)
     i = 0
+    cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
     while i < 20:
-        cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Camera Feed", 800, 900)
+        
+        
         path0 = f"./img/stereo/{i}_0.png"
         path1 = f"./img/stereo/{i}_1.png"
         if not os.path.exists(path0) or not os.path.exists(path1):
@@ -39,12 +56,12 @@ def detect():
             if not ret0 or not ret1:
                 print("Failed to grab frame")
                 break
-            cv2.resize(frame1, (1920, 1080), frame1)
+
         else:
             frame0 = cv2.imread(path0)
             frame1 = cv2.imread(path1)
 
-        size = frame0.shape
+        size = frame1.shape
         # Grayscale the image
         gray0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
         gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
@@ -66,8 +83,9 @@ def detect():
         else:
             tempFrame0 = frame0.copy()
             tempFrame1 = frame1.copy()
-        combined = numpy.vstack((tempFrame0, tempFrame1))
-        cv2.imshow("Camera Feed", combined)
+        finalFrame = combineFrame(tempFrame0, tempFrame1)
+        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]/2), int(finalFrame.shape[0]/2))
+        cv2.imshow("Camera Feed", finalFrame)
         cv2.waitKey(1)
         if charucoIds0 is not None and charucoIds1 is not None and charucoIds0.size > 4 and charucoIds1.size > 4 and charucoIds0.size == charucoIds1.size:
             temp1, temp2 = BOARD.matchImagePoints(
@@ -87,6 +105,7 @@ def detect():
     # cap.release()
     cv2.destroyAllWindows()
     return objPoints, imgPoints0, imgPoints1, size[:2]
+
 
 def savePicture(frame0, frame1, i):
     if not os.path.exists(f"./img/stereo"):
@@ -134,6 +153,7 @@ def calibrate(objPoints, imgPoints0, imgPoint1, size):
     }
     with open(f"./img/stereo_calibration.json", "w") as f:
         json.dump(calibration_data, f, indent=4)
+
 
 def StereoCameraCalibration():
     # if not os.path.exists(f"./img/stereo/0_1.png"):

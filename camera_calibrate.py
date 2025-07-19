@@ -64,9 +64,9 @@ def detect(camID):
 
 
 def createCamera(camID):
-    cap = cv2.VideoCapture(camID)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
     return cap
 
 
@@ -77,9 +77,11 @@ def takePicture(camID):
         print(f"Directory ./img/{camID} already exists. Pictures will be overwritten.")
     i = 0
     cap = createCamera(camID)
+    
     while i < 25:
         ret, frame = cap.read()
         cv2.imshow("Camera Feed", frame)
+        #cv2.resizeWindow("Camera Feed", 1280, 720)
         if not ret:
             print("Failed to grab frame")
             break
@@ -119,16 +121,16 @@ def calibrate(objPoints, imgPoints, size, camID):
 
 
 def singleCameraCalibration(camID):
-    if not os.path.exists(f"./img/{camID}/1.png"):
+    if not os.path.exists(f"./img/{camID}/20.png"):
         takePicture(camID)
     allCharucoCorners, allCharucoIds, size = detect(camID)
     return calibrate(allCharucoCorners, allCharucoIds, size, camID)
 
 
 def main():
-    list_available_cameras()
-    cam_indices = find_camera_indices()
-    print(cam_indices)
+    #list_available_cameras()
+    #cam_indices = find_camera_indices()
+    #print(cam_indices)
     cam1, dist1 = singleCameraCalibration(0)
     cam2, dist2 = singleCameraCalibration(1)
 
