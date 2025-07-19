@@ -5,6 +5,7 @@ import os
 import json
 import matplotlib.pyplot as plt
 from plot import plot_points
+from preset_recorder import record_demo_preset, load_demo_preset
 # define fixed camera parameters
 
 
@@ -39,13 +40,31 @@ def main():
     # 2 trackers, if there is one then it will be used for both cameras, which then gave camera 1 bogus data
     # predefine the trajectory as guidance
     #preset = [(200 + 50 * numpy.sin(i * 0.1), 300 + 30 * numpy.cos(i * 0.1)) for i in range(512)]
-    preset = generate_elliptical_preset()
+    #preset = generate_elliptical_preset()
 
     cv2.namedWindow("Rehab Tracker 0", cv2.WINDOW_NORMAL)
     cv2.namedWindow("Rehab Tracker 1", cv2.WINDOW_NORMAL)
     # create 2 trackers, one for each camera
-    tracker0 = HandTracker(preset_trajectory=preset, tolerance=40)
-    tracker1 = HandTracker(preset_trajectory=preset, tolerance=40)
+    tracker0 = HandTracker(preset_trajectory=None, tolerance=40)
+    tracker1 = HandTracker(preset_trajectory=None, tolerance=40)
+
+    record_demo = True
+    demo_name = "demo_preset.json"
+    if not os.path.exists("./demo"):
+        os.makedirs("./demo")
+    demo_path = f"./demo/{demo_name}"
+    # if demo preset exists, load it, otherwise record a new one
+    if record_demo:
+        print("Recording demo preset...")
+        preset_0, preset_1 = record_demo_preset(cap0, tracker0, cap1, tracker1, demo_path=demo_path)
+
+    preset_0, preset_1 = load_demo_preset(demo_path)
+    # if demo_preset is None:
+    #     demo_preset = record_demo_preset(cap0, tracker0, demo_path="./demo/demo_preset.json")
+    # predefine the trajectory as guidance
+    tracker0.preset_trajectory = preset_0
+    tracker1.preset_trajectory = preset_1
+
     
     fig = plt.figure()
     j = 0

@@ -51,6 +51,11 @@ def detect(camID):
         )
 
         if charucoCorners is not None and charucoIds is not None and charucoIds.size > 4:
+            print(f"[INFO] Image {i}: Detected {len(charucoIds)} charuco corners.")
+            frame_display = aruco.drawDetectedCornersCharuco(frame.copy(), charucoCorners, charucoIds)
+            cv2.imshow("Charuco Detection", frame_display)
+            cv2.waitKey(500)
+
             temp1, temp2 = BOARD.matchImagePoints(charucoCorners, charucoIds)
             objPoints.append(temp1)
             imgPoints.append(temp2)
