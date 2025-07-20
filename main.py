@@ -5,7 +5,7 @@ import os
 import json
 import matplotlib.pyplot as plt
 from plot import plot_points
-from preset_recorder import record_demo_preset, load_demo_preset
+from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
 # define fixed camera parameters
 
 
@@ -64,22 +64,25 @@ def main():
     tracker0 = HandTracker(preset_trajectory=None, tolerance=40)
     tracker1 = HandTracker(preset_trajectory=None, tolerance=40)
 
-    record_demo = True
-    demo_name = "demo_preset.json"
-    if not os.path.exists("./demo"):
-        os.makedirs("./demo")
-    demo_path = f"./demo/{demo_name}"
-    # if demo preset exists, load it, otherwise record a new one
-    if record_demo:
-        print("Recording demo preset...")
-        preset_0, preset_1 = record_demo_preset(cap0, tracker0, cap1, tracker1, demo_path=demo_path)
+    record_demo = False
+    record_actual = False
+    demo_path = "./demo/demo_preset.json"
 
-    preset_0, preset_1 = load_demo_preset(demo_path)
-    # if demo_preset is None:
-    #     demo_preset = record_demo_preset(cap0, tracker0, demo_path="./demo/demo_preset.json")
-    # predefine the trajectory as guidance
-    tracker0.preset_trajectory = preset_0
-    tracker1.preset_trajectory = preset_1
+    if record_demo or not os.path.exists(demo_path):
+        preset_0, preset_1 = record_demo_preset(cap0, tracker0, cap1, tracker1, demo_path=demo_path)
+    else:
+        preset_0, preset_1 = load_demo_preset(demo_path)
+
+    actual_path = "./demo/actual_movement.json"
+    if record_actual or not os.path.exists(actual_path):
+        actual_0, actual_1 = record_actual_movement(cap0, tracker0, cap1, tracker1, preset_0, preset_1, actual_path=actual_path)
+    else:
+        actual_0, actual_1 = load_actual_movement(actual_path)
+
+    # 最终用 actual 覆盖 preset（如果有的话），否则 fallback 到 preset
+    tracker0.preset_trajectory = actual_0 if actual_0 else preset_0
+    tracker1.preset_trajectory = actual_1 if actual_1 else preset_1
+
 
     
     fig = plt.figure()
