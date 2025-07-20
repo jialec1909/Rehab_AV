@@ -87,9 +87,15 @@ def plotFromFile():
     plt.show()
 
 
-def plotFromPoints(fig, points):
-
+def plotFromData(queue):
+    plt.ion()
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    plt.subplots_adjust(bottom=0.25)
-    plot_points(ax, points)
-    plt.pause(0.01)  # Allow the plot to update
+    while True:
+        points = queue.get()
+        if points is None:
+            break
+        ax.cla()
+        plot_points(ax, points)
+        plt.pause(0.01)
+    plt.close(fig)
