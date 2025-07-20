@@ -13,8 +13,8 @@ def combineFrame(frame0, frame1):
         newWidth = int(frame0.shape[1] / frame0.shape[0] * frame1.shape[0])
         frame0 = cv2.resize(frame0, (newWidth, frame1.shape[0]))
     else:
-        newHeight = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
-        frame1 = cv2.resize(frame1, (newHeight, frame0.shape[0]))
+        newWidth = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
+        frame1 = cv2.resize(frame1, (newWidth, frame0.shape[0]))
     cv2.waitKey(1)
     return numpy.hstack((frame0, frame1))   
 
