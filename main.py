@@ -35,6 +35,28 @@ def loadCameraParams():
     DISTORTION_COEFFICIENTS_0 = numpy.array(data["distortion_coefficients_0"])
     DISTORTION_COEFFICIENTS_1 = numpy.array(data["distortion_coefficients_1"])
 
+def generate_elliptical_preset(center_x=640, center_y=360, a=400, b=250, steps=400, freq=0.05):
+    return [(center_x + a * numpy.sin(i * freq), center_y + b * numpy.cos(i * freq)) for i in range(steps)]
+
+def DLT(P1, P2, point1, point2):
+ 
+    A = [point1[1]*P1[2,:] - P1[1,:],
+         P1[0,:] - point1[0]*P1[2,:],
+         point2[1]*P2[2,:] - P2[1,:],
+         P2[0,:] - point2[0]*P2[2,:]
+        ]
+    A = numpy.array(A).reshape((4,4))
+    #print('A: ')
+    #print(A)
+ 
+    B = A.transpose() @ A
+    from scipy import linalg
+    U, s, Vh = linalg.svd(B, full_matrices = False)
+ 
+    #print('Triangulated point: ')
+    #print(Vh[3,0:3]/Vh[3,3])
+    return Vh[3,0:3]/Vh[3,3]
+
 def main():
     cap0 = cv2.VideoCapture(0)
     cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
