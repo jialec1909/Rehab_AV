@@ -15,6 +15,24 @@ CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
 
 
+def createCamera(camID):
+    cap = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    return cap
+
+def combineFrame(frame0, frame1):
+    if frame0.shape[0] >= frame1.shape[0]:
+        newWidth = int(frame0.shape[1] / frame0.shape[0] * frame1.shape[0])
+        frame0 = cv2.resize(frame0, (newWidth, frame1.shape[0]))
+    else:
+        newHeight = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
+        frame1 = cv2.resize(frame1, (newHeight, frame0.shape[0]))
+    cv2.waitKey(1)
+    return numpy.hstack((frame0, frame1))   
+
+
 def detect():
     # cap = cv2.VideoCapture(1)
     BOARD.setLegacyPattern(True)
@@ -28,9 +46,10 @@ def detect():
     cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     cap1 = cv2.VideoCapture(1)
     i = 0
-    while i < 20:
-        cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Camera Feed", 800, 900)
+    cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
+    while i < 8:
+        
+        
         path0 = f"./img/stereo/{i}_0.png"
         path1 = f"./img/stereo/{i}_1.png"
         if not os.path.exists(path0) or not os.path.exists(path1):

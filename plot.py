@@ -1,9 +1,10 @@
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import re
 import enum
+import json
+from matplotlib.widgets import Slider
+
 
 class HandLandmark(enum.Enum):
     WRIST = 0
@@ -27,49 +28,68 @@ class HandLandmark(enum.Enum):
     PINKY_PIP = 18
     PINKY_DIP = 19
     PINKY_TIP = 20
-    
-def plot_points(fig,points):
-    
-    ax = fig.add_subplot(111, projection='3d')
-    x, y, z = np.array(points)[:,1], np.array(points)[:,2], np.array(points)[:,3]
+
+
+def plot_points(ax, points):
+    x, y, z = np.array(points)[:, 1], np.array(
+        points)[:, 2], np.array(points)[:, 3]
     ax.scatter(x, y, z, c='r', marker='o')
 
     # Define hand connections (pairs of indices)
     connections = [
-        (0,1),(1,2),(2,3),(3,4),         # Thumb
-        (0,5),(5,6),(6,7),(7,8),         # Index
-        (0,9),(9,10),(10,11),(11,12),    # Middle
-        (0,13),(13,14),(14,15),(15,16),  # Ring
-        (0,17),(17,18),(18,19),(19,20),  # Pinky
-        (5,9), (9,13), (13,17),  # Index to Middle to Ring to Pinky
+        (0, 1), (1, 2), (2, 3), (3, 4),         # Thumb
+        (0, 5), (5, 6), (6, 7), (7, 8),         # Index
+        (0, 9), (9, 10), (10, 11), (11, 12),    # Middle
+        (0, 13), (13, 14), (14, 15), (15, 16),  # Ring
+        (0, 17), (17, 18), (18, 19), (19, 20),  # Pinky
+        (5, 9), (9, 13), (13, 17),  # Index to Middle to Ring to Pinky
     ]
 
     # Draw lines for each connection
     for start, end in connections:
         pt_start = points[start]
         pt_end = points[end]
-        ax.plot([pt_start[1], pt_end[1]], [pt_start[2], pt_end[2]], [pt_start[3], pt_end[3]], c='lime', linewidth=2)
+        ax.plot([pt_start[1], pt_end[1]], [pt_start[2], pt_end[2]],
+                [pt_start[3], pt_end[3]], c='lime', linewidth=2)
 
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ax.set_title('3D Hand Skeleton')
-    plt.draw()
-    plt.pause(0.1)  # Pause to allow the plot to update
-    
-#
-#with open("point.txt", "r") as f:
-#    points = []
-#    for line in f:
-#        #match = re.match(r"Point\s+(\d+):\s+\(np\.float64\(([^)]+)\), np\.float64\(([^)]+)\), np\.float64\(([^)]+)\)\)",line)
-#        match = re.match(r"Point\s+(\d+):\s+\(array\(\[([^\]]+)\]\), array\(\[([^\]]+)\]\), array\(\[([^\]]+)\]\)\)", line)
-#        if match:
-#            idx = int(match.group(1))
-#            x = float(match.group(2))
-#            y = float(match.group(3))
-#            z = float(match.group(4))
-#            points.append([idx, x, y, z])
-#        if len(points) == 21:
-#            plot_points(points)
-#            points = []
-#
+
+
+def plotFromFile():
+    path = "./img/handPosition.json"
+    if not os.path.exists(path):
+        print(f"File {path} does not exist.")
+        return
+
+    with open(path, "r") as file:
+        data = file.read()
+    listOfHandLandmarks = json.loads(data)
+    print(f"Loaded {len(data)} frames of hand landmarks.")
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    plt.subplots_adjust(bottom=0.25)
+
+    # Slider setup
+    ax_slider = plt.axes([0.2, 0.1, 0.6, 0.03])
+    slider = Slider(ax_slider, 'Frame', 0, len(
+        listOfHandLandmarks)-1, valinit=0, valstep=1)
+
+    def update(val):
+        ax.cla()  # Clear the current axes
+        frame = int(slider.val)
+        plot_points(ax, listOfHandLandmarks[frame])
+        plt.draw()
+
+    slider.on_changed(update)
+    plt.show()
+
+
+def plotFromPoints(fig, points):
+
+    ax = fig.add_subplot(111, projection='3d')
+    plt.subplots_adjust(bottom=0.25)
+    plot_points(ax, points)
+    plt.pause(0.01)  # Allow the plot to update

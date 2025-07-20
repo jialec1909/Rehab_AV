@@ -3,10 +3,20 @@ from tracker import HandTracker
 import numpy
 import os
 import json
+import plot
 import matplotlib.pyplot as plt
-from plot import plot_points
+from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
 # define fixed camera parameters
 
+def combineFrame(frame0, frame1):
+    if frame0.shape[0] >= frame1.shape[0]:
+        newWidth = int(frame0.shape[1] / frame0.shape[0] * frame1.shape[0])
+        frame0 = cv2.resize(frame0, (newWidth, frame1.shape[0]))
+    else:
+        newHeight = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
+        frame1 = cv2.resize(frame1, (newHeight, frame0.shape[0]))
+    cv2.waitKey(1)
+    return numpy.hstack((frame0, frame1))   
 
 def loadCameraParams():
     path = f"./img/stereo_calibration.json"
@@ -51,9 +61,37 @@ def main():
     cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 
     # 2 trackers, if there is one then it will be used for both cameras, which then gave camera 1 bogus data
-    tracker0 = HandTracker()
-    tracker1 = HandTracker()
+    # predefine the trajectory as guidance
+    #preset = [(200 + 50 * numpy.sin(i * 0.1), 300 + 30 * numpy.cos(i * 0.1)) for i in range(512)]
+    #preset = generate_elliptical_preset()
+    # create 2 trackers, one for each camera
+    tracker0 = HandTracker(preset_trajectory=None, tolerance=40)
+    tracker1 = HandTracker(preset_trajectory=None, tolerance=40)
+
+#    record_demo = False
+#    record_actual = False
+#    demo_path = "./demo/demo_preset.json"
+#
+#    if record_demo or not os.path.exists(demo_path):
+#        #preset_0, preset_1 = record_demo_preset(cap0, tracker0, cap1, tracker1, demo_path=demo_path)
+#    else:
+#        preset_0, preset_1 = load_demo_preset(demo_path)
+#
+#    actual_path = "./demo/actual_movement.json"
+#    if record_actual or not os.path.exists(actual_path):
+#        actual_0, actual_1 = record_actual_movement(cap0, tracker0, cap1, tracker1, preset_0, preset_1, actual_path=actual_path)
+#    else:
+#        actual_0, actual_1 = load_actual_movement(actual_path)
+#
+#    # 最终用 actual 覆盖 preset（如果有的话），否则 fallback 到 preset
+#    tracker0.preset_trajectory = actual_0 if actual_0 else preset_0
+#    tracker1.preset_trajectory = actual_1 if actual_1 else preset_1
+
+
     
+    cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
+    listOfHandLandmarks = []
+    plt.ion()
     fig = plt.figure()
     while True:
         ret0, frame0 = cap0.read()
@@ -62,43 +100,52 @@ def main():
             break
 
         frame0, landmark0 = tracker0.process_frame(frame0)
-        tracker0.draw_trajectory_smooth(frame0)
+        #tracker0.draw_trajectory_smooth(frame0)
+        #tracker0.draw_preset_trajectory_with_tolerance(frame0)
+
         frame1, landmark1 = tracker1.process_frame(frame1)
-        tracker1.draw_trajectory_smooth(frame1)
-        points = []
+        #tracker1.draw_trajectory_smooth(frame1)
+        #tracker1.draw_preset_trajectory_with_tolerance(frame1)
+
+        finalFrame = combineFrame(frame0, frame1)
+        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]*0.7), int(finalFrame.shape[0]*0.7))
+        cv2.imshow("Camera Feed", finalFrame) 
+        
         if landmark0 and landmark1:
+            points = []
             for i in range(21):
                 point0 = numpy.array([landmark0.landmark[i].x, landmark0.landmark[i].y])
                 point1 = numpy.array([landmark1.landmark[i].x, landmark1.landmark[i].y])
                 # triangulate points
                 points_3d = triangulates(point0, point1)
                 points.append([i, points_3d[0], points_3d[1], points_3d[2]])
-                
-        cv2.imshow("Rehab Tracker 0", frame0)
-        cv2.imshow("Rehab Tracker 1", frame1)
+            listOfHandLandmarks.append(points)
+            plot.plotFromPoints(fig,points)
         if cv2.waitKey(1) & 0xFF == ord('p'):
-            plot_points(fig, points)
- 
-        
-
+            break
+    
+    with open("./img/handPosition.json", "w") as output:
+        json.dump(listOfHandLandmarks, output, indent=4)        
     cap0.release()
     cap1.release()
     cv2.destroyAllWindows()
+    plt.ioff()
+    plt.close('all')  # Destroy all previous plot windows
 
 def triangulates(point0, point1):
     
     projectionMatrix0 = numpy.concatenate([numpy.eye(3), [[0],[0],[0]]], axis = -1)
     projectionMatrix1 = numpy.concatenate([ROTATION_MATRIX, TRANSLATION_VECTOR], axis = -1)
     
-    #points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
-    # Convert from homogeneous coordinates to 3D
-    #points_3d = points_4d[:3] / points_4d[3]
-    points_3d = DLT(projectionMatrix0, projectionMatrix1, point0, point1)
-    return points_3d
+    points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
+    points_3d = cv2.convertPointsFromHomogeneous(points_4d.T)
+    #points_3d = DLT(projectionMatrix0, projectionMatrix1, point0, point1)
+    return points_3d.flatten()
 
 if __name__ == "__main__":
     loadCameraParams()
     main()
+    plot.plotFromFile()
 
 
 # point transformation idea
