@@ -24,23 +24,13 @@ def createCamera(camID):
 
 def combineFrame(frame0, frame1):
     if frame0.shape[0] >= frame1.shape[0]:
-<<<<<<< HEAD
         newWidth = int(frame0.shape[1] / frame0.shape[0] * frame1.shape[0])
         frame0 = cv2.resize(frame0, (newWidth, frame1.shape[0]))
     else:
-        newHeight = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
-        frame1 = cv2.resize(frame1, (newHeight, frame0.shape[0]))
+        newWidth = int(frame1.shape[1] / frame1.shape[0] * frame0.shape[0])
+        frame1 = cv2.resize(frame1, (newWidth, frame0.shape[0]))
     cv2.waitKey(1)
     return numpy.hstack((frame0, frame1))   
-=======
-        newHeight = int(frame0.shape[0] / frame0.shape[1] * frame1.shape[1])
-        frame0 = cv2.resize(frame0, (frame1.shape[1], newHeight))
-    else:
-        newHeight = int(frame1.shape[0] / frame1.shape[1] * frame0.shape[1])
-        frame1 = cv2.resize(frame1, (frame0.shape[1], newHeight))
-    cv2.waitKey(1)
-    return numpy.vstack((frame0, frame1))   
->>>>>>> trajectory
 
 
 def detect():
@@ -55,11 +45,7 @@ def detect():
     cap1 = createCamera(1)
     i = 0
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
-<<<<<<< HEAD
     while i < 8:
-=======
-    while i < 20:
->>>>>>> trajectory
         
         
         path0 = f"./img/stereo/{i}_0.png"
@@ -98,21 +84,22 @@ def detect():
             tempFrame0 = frame0.copy()
             tempFrame1 = frame1.copy()
         finalFrame = combineFrame(tempFrame0, tempFrame1)
-        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]/2), int(finalFrame.shape[0]/2))
-        cv2.imshow("Camera Feed", finalFrame)
-        cv2.waitKey(1)
+        cv2.resizeWindow("Camera Feed", int(finalFrame.shape[1]*0.7), int(finalFrame.shape[0]*0.7))
+        cv2.imshow("Camera Feed", finalFrame) 
         if charucoIds0 is not None and charucoIds1 is not None and charucoIds0.size > 4 and charucoIds1.size > 4 and charucoIds0.size == charucoIds1.size:
             temp1, temp2 = BOARD.matchImagePoints(
                 charucoCorners0, charucoIds0)
             _, temp3 = BOARD.matchImagePoints(charucoCorners1, charucoIds1)
             print(f"Found {len(temp1)} charuco corners on image  {i}_0")
-            print(f"Found {len(temp3)} charuco corners on image  {i}_1")
-            objPoints.append(temp1)
-            imgPoints0.append(temp2)
-            imgPoints1.append(temp3)
-            savePicture(frame0, frame1, i)
+            if cv2.waitKey(1) & 0xFF == ord('s'):
+                objPoints.append(temp1)
+                imgPoints0.append(temp2)
+                imgPoints1.append(temp3)
+                i += 1
+                print(f"Saved image pair {i}")
+                #savePicture(frame0, frame1, i)
             sleep(1)  # Wait for half a second before capturing the next frame
-            i += 1
+            
         else:
             print("No charuco corners found on image pair " + str(i))
 

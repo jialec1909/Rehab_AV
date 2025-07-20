@@ -55,6 +55,9 @@ def plot_points(ax, points):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
+    ax.set_xlim([0.1, 0.3])
+    ax.set_ylim([0.1, 0.3])
+    ax.set_zlim([0.3, 0.5])
     ax.set_title('3D Hand Skeleton')
 
 
