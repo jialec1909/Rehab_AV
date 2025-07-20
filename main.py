@@ -5,7 +5,7 @@ import os
 import json
 import plot
 import matplotlib.pyplot as plt
-from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
+#from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
 # define fixed camera parameters
 
 def combineFrame(frame0, frame1):
@@ -34,25 +34,6 @@ def loadCameraParams():
     CAMERA_INTRINSICS_1 = numpy.array(data["camera_intrinsics_1"])
     DISTORTION_COEFFICIENTS_0 = numpy.array(data["distortion_coefficients_0"])
     DISTORTION_COEFFICIENTS_1 = numpy.array(data["distortion_coefficients_1"])
-
-def DLT(P1, P2, point1, point2):
- 
-    A = [point1[1]*P1[2,:] - P1[1,:],
-         P1[0,:] - point1[0]*P1[2,:],
-         point2[1]*P2[2,:] - P2[1,:],
-         P2[0,:] - point2[0]*P2[2,:]
-        ]
-    A = numpy.array(A).reshape((4,4))
-    #print('A: ')
-    #print(A)
- 
-    B = A.transpose() @ A
-    from scipy import linalg
-    U, s, Vh = linalg.svd(B, full_matrices = False)
- 
-    #print('Triangulated point: ')
-    #print(Vh[3,0:3]/Vh[3,3])
-    return Vh[3,0:3]/Vh[3,3]
 
 def main():
     cap0 = cv2.VideoCapture(0)
@@ -139,7 +120,6 @@ def triangulates(point0, point1):
     
     points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
     points_3d = cv2.convertPointsFromHomogeneous(points_4d.T)
-    #points_3d = DLT(projectionMatrix0, projectionMatrix1, point0, point1)
     return points_3d.flatten()
 
 if __name__ == "__main__":
