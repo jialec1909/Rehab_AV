@@ -52,9 +52,9 @@ def plot_points(ax, points):
         ax.plot([pt_start[1], pt_end[1]], [pt_start[2], pt_end[2]],
                 [pt_start[3], pt_end[3]], c='lime', linewidth=2)
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
     ax.set_xlim([0.1, 0.3])
     ax.set_ylim([0.1, 0.3])
     ax.set_zlim([0.3, 0.5])
@@ -62,6 +62,7 @@ def plot_points(ax, points):
 
 
 def plotFromFile():
+    plt.close('all')
     path = "./img/handPosition.json"
     if not os.path.exists(path):
         print(f"File {path} does not exist.")
@@ -100,5 +101,5 @@ def plotFromData(queue):
             break
         ax.cla()
         plot_points(ax, points)
-        plt.pause(0.01)
+        plt.pause(0.001)
     plt.close(fig)

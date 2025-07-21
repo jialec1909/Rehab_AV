@@ -4,7 +4,6 @@ import numpy
 import os
 import json
 import plot
-import matplotlib.pyplot as plt
 import multiprocessing as mp
 from stereo_calibrate import createCamera, combineFrame
 #from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
@@ -38,8 +37,6 @@ def main():
     process.start()
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
     listOfHandLandmarks = []
-    plt.ion()
-    fig = plt.figure()
     while True:
         ret0, frame0 = cap0.read()
         ret1, frame1 = cap1.read()
@@ -67,7 +64,8 @@ def main():
                 points_3d = triangulates(point0, point1)
                 points.append([i, points_3d[0], points_3d[1], points_3d[2]])
             listOfHandLandmarks.append(points)
-            queue.put(points)
+            if queue.qsize() <= 0:
+                queue.put(points)
         if cv2.waitKey(1) & 0xFF == ord('p'):
             break
     
@@ -76,8 +74,6 @@ def main():
     cap0.release()
     cap1.release()
     cv2.destroyAllWindows()
-    plt.ioff()
-    plt.close('all')  # Destroy all previous plot windows
 
 def triangulates(point0, point1):
     
