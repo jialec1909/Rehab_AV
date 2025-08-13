@@ -5,7 +5,7 @@ import os
 import json
 import plot
 import multiprocessing as mp
-from stereo_calibrate import createCamera, combineFrame
+from helper import createCamera, combineFrame
 #from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
 # define fixed camera parameters
 
@@ -79,7 +79,6 @@ def triangulates(point0, point1):
     
     projectionMatrix0 = numpy.concatenate([numpy.eye(3), [[0],[0],[0]]], axis = -1)
     projectionMatrix1 = numpy.concatenate([ROTATION_MATRIX, TRANSLATION_VECTOR], axis = -1)
-    
     points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
     points_3d = cv2.convertPointsFromHomogeneous(points_4d.T)
     return points_3d.flatten()
@@ -87,5 +86,5 @@ def triangulates(point0, point1):
 if __name__ == "__main__":
     loadCameraParams()
     main()
-    plot.plotFromFile()
+    #plot.plotFromFile()
 

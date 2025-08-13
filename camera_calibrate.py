@@ -5,16 +5,12 @@ import os
 from time import sleep
 import json
 from camera_selector import find_camera_indices
-
-# BOARD = aruco.CharucoBoard((5, 5), 0.015, 0.011, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-# BOARD = aruco.CharucoBoard((6, 8), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-# BOARD = aruco.CharucoBoard((7, 3), 0.030, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-BOARD = aruco.CharucoBoard(
-    (8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
-)
+from helper import createCamera, resizeFrame
+#BOARD = aruco.CharucoBoard((7, 4), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
+BOARD = aruco.CharucoBoard((8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
 CHARUCO_PARAMS = aruco.CharucoParameters()
 DETECTOR_PARAMS = aruco.DetectorParameters()
-
+    
 def list_available_cameras(max_cams=5):
     for i in range(max_cams):
         cap = cv2.VideoCapture(i)
@@ -52,28 +48,15 @@ def detect(camID):
 
         if charucoCorners is not None and charucoIds is not None and charucoIds.size > 4:
             print(f"[INFO] Image {i}: Detected {len(charucoIds)} charuco corners.")
-            frame_display = aruco.drawDetectedCornersCharuco(frame.copy(), charucoCorners, charucoIds)
-            cv2.imshow("Charuco Detection", frame_display)
-            cv2.waitKey(500)
-
+            #frame_display = aruco.drawDetectedCornersCharuco(frame.copy(), charucoCorners, charucoIds)
             temp1, temp2 = BOARD.matchImagePoints(charucoCorners, charucoIds)
             objPoints.append(temp1)
             imgPoints.append(temp2)
-
         else:
             print("No charuco corners found on image " + str(i))
-
     # cap.release()
     cv2.destroyAllWindows()
     return objPoints, imgPoints, size[:2]
-
-
-def createCamera(camID):
-    cap = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
-    return cap
-
 
 def takePicture(camID):
     if not os.path.exists(f"./img/{camID}"):
@@ -82,11 +65,10 @@ def takePicture(camID):
         print(f"Directory ./img/{camID} already exists. Pictures will be overwritten.")
     i = 0
     cap = createCamera(camID)
-    
-    while i < 25:
+    cv2.namedWindow("Camera Feed", cv2.WINDOW_AUTOSIZE)
+    while i < 15:
         ret, frame = cap.read()
-        cv2.imshow("Camera Feed", frame)
-        #cv2.resizeWindow("Camera Feed", 1280, 720)
+        cv2.imshow("Camera Feed", resizeFrame(frame))
         if not ret:
             print("Failed to grab frame")
             break

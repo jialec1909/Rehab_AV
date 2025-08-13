@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import enum
 import json
+import math
 from matplotlib.widgets import Slider
 
 
@@ -59,6 +60,10 @@ def plot_points(ax, points):
     ax.set_ylim([0.1, 0.3])
     ax.set_zlim([0.3, 0.5])
     ax.set_title('3D Hand Skeleton')
+    dist= math.sqrt(math.pow(x[0]-x[9], 2) +
+                   math.pow(y[0]-y[9], 2) +
+                   math.pow(z[0]-z[9], 2))
+    print(f"Distance between wrist and middle finger: {dist:.20f} units")
 
 
 def plotFromFile():
@@ -86,6 +91,7 @@ def plotFromFile():
         frame = int(slider.val)
         plot_points(ax, listOfHandLandmarks[frame])
         plt.draw()
+        
 
     slider.on_changed(update)
     plt.show()
@@ -103,3 +109,4 @@ def plotFromData(queue):
         plot_points(ax, points)
         plt.pause(0.001)
     plt.close(fig)
+    
