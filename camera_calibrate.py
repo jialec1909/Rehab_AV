@@ -5,11 +5,7 @@ import os
 from time import sleep
 import json
 from camera_selector import find_camera_indices
-from helper import createCamera, resizeFrame
-#BOARD = aruco.CharucoBoard((7, 4), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-BOARD = aruco.CharucoBoard((8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-CHARUCO_PARAMS = aruco.CharucoParameters()
-DETECTOR_PARAMS = aruco.DetectorParameters()
+from helper import createCamera, resizeFrame, setBoardParameters
     
 def list_available_cameras(max_cams=5):
     for i in range(max_cams):
@@ -19,9 +15,6 @@ def list_available_cameras(max_cams=5):
         cap.release()
 
 def detect(camID):
-    # cap = cv2.VideoCapture(1)
-    BOARD.setLegacyPattern(True)
-
     objPoints = []
     imgPoints = []
 
@@ -31,10 +24,6 @@ def detect(camID):
         # frame = BOARD.generateImage((900,900),10,1)
         frame = cv2.imread(f"./img/{camID}/" + str(i) + ".png")
         size = frame.shape
-        # ret, frame = cap.read()
-        # if not ret:
-        #    print("Failed to grab frame")
-        #    break
 
         # Grayscale the image
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -115,9 +104,8 @@ def singleCameraCalibration(camID):
 
 
 def main():
-    #list_available_cameras()
-    #cam_indices = find_camera_indices()
-    #print(cam_indices)
+    global BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS
+    BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS = setBoardParameters()
     cam1, dist1 = singleCameraCalibration(0)
     cam2, dist2 = singleCameraCalibration(1)
 

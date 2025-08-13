@@ -5,30 +5,8 @@ import os
 import json
 import plot
 import multiprocessing as mp
-from stereo_calibrate import createCamera, combineFrame, resizeFrame
+from helper import createCamera, combineFrame, resizeFrame, triangulates, loadCameraParams, setBoardParameters
 from cv2 import aruco
-#from preset_recorder import record_demo_preset, load_demo_preset, record_actual_movement, load_actual_movement
-# define fixed camera parameters
-BOARD = aruco.CharucoBoard((8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-CHARUCO_PARAMS = aruco.CharucoParameters()
-DETECTOR_PARAMS = aruco.DetectorParameters()
-BOARD.setLegacyPattern(True)
-def loadCameraParams():
-    path = f"./img/stereo_calibration.json"
-    if not os.path.exists(path):
-        print("calibration parameters file not found.")
-        exit(1)
-    with open(path) as f:
-        data = json.load(f)
-    global ROTATION_MATRIX, TRANSLATION_VECTOR, ESSENTIAL_MATRIX, FUNDAMENTAL_MATRIX, CAMERA_INTRINSICS_0, CAMERA_INTRINSICS_1, DISTORTION_COEFFICIENTS_0, DISTORTION_COEFFICIENTS_1
-    ROTATION_MATRIX = numpy.array(data["rotation_matrix"])
-    TRANSLATION_VECTOR = numpy.array(data["translation_vector"])
-    ESSENTIAL_MATRIX = numpy.array(data["essential_matrix"])
-    FUNDAMENTAL_MATRIX = numpy.array(data["fundamental_matrix"])
-    CAMERA_INTRINSICS_0 = numpy.array(data["camera_intrinsics_0"])
-    CAMERA_INTRINSICS_1 = numpy.array(data["camera_intrinsics_1"])
-    DISTORTION_COEFFICIENTS_0 = numpy.array(data["distortion_coefficients_0"])
-    DISTORTION_COEFFICIENTS_1 = numpy.array(data["distortion_coefficients_1"])
 
 def main():
     cap0 = createCamera(0)
@@ -74,15 +52,6 @@ def main():
     cap0.release()
     cap1.release()
     cv2.destroyAllWindows()
-
-def triangulates(point0, point1):
-    
-    projectionMatrix0 = numpy.concatenate([numpy.eye(3), [[0],[0],[0]]], axis = -1)
-    projectionMatrix1 = numpy.concatenate([ROTATION_MATRIX, TRANSLATION_VECTOR], axis = -1)
-    
-    points_4d = cv2.triangulatePoints(projectionMatrix0, projectionMatrix1, point0, point1)
-    points_3d = cv2.convertPointsFromHomogeneous(points_4d.T)
-    return points_3d.flatten()
         
 def getDistance(charucoIds0, charucoIds1, charucoCorners0, charucoCorners1):
     ids0_flat = charucoIds0.flatten()
@@ -100,7 +69,10 @@ def getDistance(charucoIds0, charucoIds1, charucoCorners0, charucoCorners1):
         p3d_26 = triangulates(pt0_26, pt1_26)
         dist = numpy.linalg.norm(p3d_8 - p3d_26)
         print(f"Distance between corner 8 and 26: {dist:.6f} meters")
+
 if __name__ == "__main__":
+    global BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS 
+    BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS = setBoardParameters()
     loadCameraParams()
     main()
     #plot.plotFromFile()

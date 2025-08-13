@@ -2,26 +2,10 @@ import cv2
 import numpy
 from cv2 import aruco
 import os
-from helper import combineFrame, resizeFrame, matchingCorner
+from helper import combineFrame, resizeFrame, matchingCorner, createCamera, setBoardParameters
 import json
 
-#BOARD = aruco.CharucoBoard((7, 4), 0.025, 0.018, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-BOARD = aruco.CharucoBoard((8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
-CHARUCO_PARAMS = aruco.CharucoParameters()
-DETECTOR_PARAMS = aruco.DetectorParameters()
-
-
-def createCamera(camID):
-    cap = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
-    cap.set(cv2.CAP_PROP_FPS, 60)
-    return cap
-
 def detect():
-    # cap = cv2.VideoCapture(1)
-    BOARD.setLegacyPattern(True)
-
     objPoints = []
     imgPoints0 = []
     imgPoints1 = []
@@ -137,6 +121,8 @@ def calibrate(objPoints, imgPoints0, imgPoint1, size):
         json.dump(calibration_data, f, indent=4)
 
 def main():
+    global BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS 
+    BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS = setBoardParameters()
     objPoints, imgPoints0, imgPoints1, size = detect()
     calibrate(objPoints, imgPoints0, imgPoints1, size)
 
