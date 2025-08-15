@@ -16,7 +16,7 @@ def main():
     tracker1 = HandTracker(preset_trajectory=None, tolerance=40)
     
     queue = mp.Queue()
-    process = mp.Process(target=plot.plotFromData, args=(queue,))
+    process = mp.Process(target=plot.plotFromLive, args=(queue,))
     process.start()
     cv2.namedWindow("Camera Feed", cv2.WINDOW_NORMAL)
     listOfHandLandmarks = []
@@ -50,10 +50,11 @@ def main():
             if queue.qsize() <= 0:
                 queue.put(points)
         if cv2.waitKey(1) & 0xFF == ord('p'):
+            with open("./img/handPosition.json", "w") as output:
+                json.dump(listOfHandLandmarks, output, indent=4)    
+            process.terminate()
             break
-    
-    with open("./img/handPosition.json", "w") as output:
-        json.dump(listOfHandLandmarks, output, indent=4)        
+        
     cap0.release()
     cap1.release()
     cv2.destroyAllWindows()

@@ -56,14 +56,16 @@ def plot_points(ax, points):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
-    ax.set_xlim([0.1, 0.3])
-    ax.set_ylim([0.1, 0.3])
-    ax.set_zlim([0.3, 0.5])
+    ax.set_xlim([0, 0.4])
+    ax.set_ylim([0, 0.4])
+    ax.set_zlim([0, 0.4])
     ax.set_title('3D Hand Skeleton')
     dist= math.sqrt(math.pow(x[0]-x[9], 2) +
                    math.pow(y[0]-y[9], 2) +
                    math.pow(z[0]-z[9], 2))
-    print(f"Distance between wrist and middle finger: {dist:.20f} units")
+    ax.scatter([0], [0], [0], c='b', marker='o', s=60)
+    #print(f"Distance between wrist and middle finger: {dist:.20f} units")
+    print(f"wrist: {x[0]:.20f}, {y[0]:.20f}, {z[0]:.20f}")
 
 
 def plotFromFile():
@@ -82,7 +84,9 @@ def plotFromFile():
     plt.subplots_adjust(bottom=0.25)
 
     # Slider setup
+    ax.view_init(elev=0, azim=0, roll= 0)
     ax_slider = plt.axes([0.2, 0.1, 0.6, 0.03])
+    
     slider = Slider(ax_slider, 'Frame', 0, len(
         listOfHandLandmarks)-1, valinit=0, valstep=1)
 
@@ -91,13 +95,12 @@ def plotFromFile():
         frame = int(slider.val)
         plot_points(ax, listOfHandLandmarks[frame])
         plt.draw()
-        
 
     slider.on_changed(update)
     plt.show()
 
 
-def plotFromData(queue):
+def plotFromLive(queue):
     plt.ion()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -110,3 +113,5 @@ def plotFromData(queue):
         plt.pause(0.001)
     plt.close(fig)
     
+if __name__ == "__main__":
+    plotFromFile()
