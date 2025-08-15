@@ -51,7 +51,7 @@ def detect():
                 charucoCorners0, charucoIds0, charucoCorners1, charucoIds1)
             temp1, temp2 = BOARD.matchImagePoints(charucoCorners0, charucoIds)
             _, temp3 = BOARD.matchImagePoints(charucoCorners1, charucoIds)
-            if len(charucoIds) > 10:
+            if len(charucoIds) > 20:
                 objPoints.append(temp1)
                 imgPoints0.append(temp2)
                 imgPoints1.append(temp3)

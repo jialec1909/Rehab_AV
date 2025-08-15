@@ -2,17 +2,8 @@ import cv2
 import numpy
 from cv2 import aruco
 import os
-from time import sleep
 import json
-from camera_selector import find_camera_indices
 from helper import createCamera, resizeFrame, setBoardParameters
-    
-def list_available_cameras(max_cams=5):
-    for i in range(max_cams):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            print(f"Camera {i} is available")
-        cap.release()
 
 def detect(camID):
     objPoints = []
@@ -21,7 +12,6 @@ def detect(camID):
     # get count of pictures in /img
     imgCount = len(os.listdir(f"./img/{camID}/"))
     for i in range(imgCount):
-        # frame = BOARD.generateImage((900,900),10,1)
         frame = cv2.imread(f"./img/{camID}/" + str(i) + ".png")
         size = frame.shape
 
@@ -97,11 +87,10 @@ def calibrate(objPoints, imgPoints, size, camID):
 
 
 def singleCameraCalibration(camID):
-    if not os.path.exists(f"./img/{camID}/20.png"):
+    if not os.path.exists(f"./img/{camID}/5.png"):
         takePicture(camID)
     allCharucoCorners, allCharucoIds, size = detect(camID)
     return calibrate(allCharucoCorners, allCharucoIds, size, camID)
-
 
 def main():
     global BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS

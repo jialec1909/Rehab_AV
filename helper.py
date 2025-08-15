@@ -9,6 +9,7 @@ def setBoardParameters():
     BOARD = aruco.CharucoBoard((8, 6), 0.03, 0.022, aruco.getPredefinedDictionary(aruco.DICT_4X4_1000))
     CHARUCO_PARAMS = aruco.CharucoParameters()
     DETECTOR_PARAMS = aruco.DetectorParameters()
+    BOARD.setLegacyPattern(True)
     return BOARD, CHARUCO_PARAMS, DETECTOR_PARAMS
 
 def createCamera(camID):
